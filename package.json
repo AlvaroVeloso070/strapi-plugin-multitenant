@@ -1,0 +1,51 @@
+{
+  "name": "strapi-plugin-multitenant",
+  "version": "1.0.0",
+  "description": "PostgreSQL schema-per-tenant isolation for Strapi 5. Identifies tenants via subdomain, propagates context through AsyncLocalStorage, and proxies Strapi's DB layer to route queries to the correct schema.",
+  "license": "MIT",
+  "author": {
+    "name": "Veloso",
+    "url": "https://github.com/veloso"
+  },
+  "keywords": [
+    "strapi",
+    "strapi-plugin",
+    "multitenancy",
+    "multi-tenant",
+    "postgresql",
+    "schema",
+    "isolation",
+    "subdomain",
+    "saas"
+  ],
+  "homepage": "https://github.com/veloso/strapi-plugin-multitenant#readme",
+  "bugs": {
+    "url": "https://github.com/veloso/strapi-plugin-multitenant/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/veloso/strapi-plugin-multitenant.git"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "peerDependencies": {
+    "@strapi/strapi": "^5.0.0"
+  },
+  "strapi": {
+    "name": "multitenancy",
+    "displayName": "Multitenant",
+    "description": "PostgreSQL schema-per-tenant isolation via subdomain routing for Strapi 5",
+    "kind": "plugin",
+    "required": false
+  },
+  "exports": {
+    "./strapi-admin": "./admin/src/index.js",
+    "./strapi-server": "./strapi-server.js"
+  },
+  "files": [
+    "admin",
+    "server",
+    "strapi-server.js"
+  ]
+}

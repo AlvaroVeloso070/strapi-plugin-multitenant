@@ -1,0 +1,6 @@
+.github/
+.gitignore
+*.test.js
+*.spec.js
+coverage/
+.nyc_output/
