@@ -221,7 +221,7 @@ After installation, a **Multitenancy** section appears in the Strapi admin Setti
 |---|---|
 | **List tenants** | View all active tenants with slug, name, and schema |
 | **Add tenant** | Create a new tenant — automatically provisions the PostgreSQL schema |
-| **Edit tenant** | Update the display name (slug is immutable) |
+| **Edit tenant** | Update the display name or slug (schema name is immutable) |
 | **Delete tenant** | Deactivates the tenant record (schema is preserved by default) |
 | **Sync schemas** | Adds any missing tables/columns to all tenant schemas |
 
@@ -244,7 +244,7 @@ All endpoints are protected by Strapi admin authentication and accessible under 
 | `GET` | `/multitenancy/tenants` | List all active tenants |
 | `GET` | `/multitenancy/tenants/:slug` | Get a single tenant |
 | `POST` | `/multitenancy/tenants` | Create a tenant |
-| `PUT` | `/multitenancy/tenants/:slug` | Update tenant name |
+| `PUT` | `/multitenancy/tenants/:slug` | Update tenant name and/or slug |
 | `DELETE` | `/multitenancy/tenants/:slug` | Deactivate tenant (`?dropSchema=true` to drop the schema) |
 | `POST` | `/multitenancy/sync` | Sync all tenant schemas |
 
@@ -253,12 +253,25 @@ All endpoints are protected by Strapi admin authentication and accessible under 
 ```json
 {
   "slug": "acme",
-  "name": "Acme Corp"
+  "name": "Acme Corp",
+  "schema": "acme"
 }
 ```
 
-- `slug`: lowercase letters, numbers, and hyphens only (`[a-z0-9-]+`). Becomes both the subdomain and the PostgreSQL schema name.
+- `slug`: lowercase letters, numbers, and hyphens only (`[a-z0-9-]+`). Used as the subdomain identifier. **Can be changed after creation.**
 - `name`: display name, can contain any characters.
+- `schema`: lowercase letters, numbers, underscores, and hyphens only (`[a-z0-9_-]+`). Becomes the PostgreSQL schema name. **Immutable after creation.**
+
+### Update tenant request body
+
+```json
+{
+  "name": "Acme Corporation",
+  "slug": "acme-new"
+}
+```
+
+Both `name` and `slug` are required. The `schema` field cannot be updated.
 
 ---
 
@@ -273,9 +286,10 @@ const tenant = tenantContext.getTenant(); // { slug, name, schema, ... } | null
 
 // Tenant management
 const tenantManager = strapi.plugin('multitenancy').service('tenantManager');
-await tenantManager.createTenant({ slug: 'acme', name: 'Acme Corp' });
-await tenantManager.getTenant('acme');
+await tenantManager.createTenant({ slug: 'acme', name: 'Acme Corp', schema: 'acme' });
+await tenantManager.getTenant('acme');               // lookup by current slug
 await tenantManager.getAllTenants();
+await tenantManager.updateTenant('acme', { name: 'Acme Corp', slug: 'acme-new' }); // slug is optional
 await tenantManager.deleteTenant('acme', { dropSchema: false });
 
 // Schema management
@@ -323,7 +337,8 @@ The sync operation is idempotent — it only adds missing tables and columns; it
 
 - **PostgreSQL only** — the schema isolation mechanism requires PostgreSQL.
 - **Nested subdomains not supported** — `a.b.myapp.com` is rejected; only single-level subdomains (`a.myapp.com`) are recognized.
-- **Slug is immutable** — the slug (and therefore the schema name) cannot be changed after creation. Create a new tenant and migrate data if renaming is needed.
+- **Schema name is immutable** — the PostgreSQL schema name cannot be changed after creation. Create a new tenant and migrate data if renaming is needed.
+- **Slug is mutable** — changing a tenant's slug changes its subdomain identifier. Existing sessions or cached links to the old subdomain will break until updated.
 - **No data migration tools** — cross-tenant data migration is out of scope; use standard PostgreSQL tools (`pg_dump`, `INSERT INTO ... SELECT`).
 
 ---

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Button,
   Flex,
@@ -28,6 +28,10 @@ const validate = (values) => {
     errors.slug = 'Only lowercase letters, numbers, and hyphens';
   }
   if (!values.name) errors.name = 'Required';
+  if (!values.schema) errors.schema = 'Required';
+  else if (!/^[a-z0-9_-]+$/.test(values.schema)) {
+    errors.schema = 'Only lowercase letters, numbers, underscores, and hyphens';
+  }
   return errors;
 };
 
@@ -36,6 +40,7 @@ const TenantCreatePage = () => {
   const { toggleNotification } = useNotification();
   const navigate = useNavigate();
   const { post } = useFetchClient();
+  const [schemaManuallySet, setSchemaManuallySet] = useState(false);
 
   const mutation = useMutation({
     mutationFn: (body) => post(getTenantsUrl(), body),
@@ -70,7 +75,7 @@ const TenantCreatePage = () => {
         )}
       </Page.Title>
       <Formik
-        initialValues={{ slug: '', name: '' }}
+        initialValues={{ slug: '', name: '', schema: '' }}
         validate={validate}
         onSubmit={(values) => mutation.mutate(values)}
       >
@@ -92,7 +97,7 @@ const TenantCreatePage = () => {
               })}
               subtitle={formatMessage({
                 id: `${pluginId}.create.subtitle`,
-                defaultMessage: 'The slug will be used as the subdomain (e.g.: acme.localhost)',
+                defaultMessage: 'The slug identifies the tenant by subdomain. The schema name is permanent.',
               })}
               navigationAction={
                 <Button variant="tertiary" onClick={() => navigate('..')} startIcon={<ArrowLeft />} size="S">
@@ -126,14 +131,20 @@ const TenantCreatePage = () => {
                       <TextInput
                         name="slug"
                         value={values.slug || ''}
-                        onChange={(e) => setFieldValue('slug', e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFieldValue('slug', val);
+                          if (!schemaManuallySet) {
+                            setFieldValue('schema', val);
+                          }
+                        }}
                         onBlur={handleBlur}
                         placeholder="acme"
                       />
                       <Field.Hint>
                         {formatMessage({
                           id: `${pluginId}.slug.hint`,
-                          defaultMessage: 'e.g.: acme → acme.localhost',
+                          defaultMessage: 'Subdomain identifier — can be changed later (e.g.: acme → acme.localhost)',
                         })}
                       </Field.Hint>
                       <Field.Error />
@@ -155,6 +166,34 @@ const TenantCreatePage = () => {
                         onBlur={handleBlur}
                         placeholder="Acme Corp"
                       />
+                      <Field.Error />
+                    </Field.Root>
+                  </Grid.Item>
+                  <Grid.Item col={6} xs={12}>
+                    <Field.Root
+                      name="schema"
+                      error={errors.schema}
+                      required
+                    >
+                      <Field.Label>
+                        {formatMessage({ id: `${pluginId}.schema`, defaultMessage: 'Schema Name' })}
+                      </Field.Label>
+                      <TextInput
+                        name="schema"
+                        value={values.schema || ''}
+                        onChange={(e) => {
+                          setSchemaManuallySet(true);
+                          setFieldValue('schema', e.target.value);
+                        }}
+                        onBlur={handleBlur}
+                        placeholder="acme"
+                      />
+                      <Field.Hint>
+                        {formatMessage({
+                          id: `${pluginId}.schema.hint`,
+                          defaultMessage: 'PostgreSQL schema name — permanent, cannot be changed after creation',
+                        })}
+                      </Field.Hint>
                       <Field.Error />
                     </Field.Root>
                   </Grid.Item>

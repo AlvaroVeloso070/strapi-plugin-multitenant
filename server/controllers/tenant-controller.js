@@ -25,10 +25,10 @@ module.exports = ({ strapi }) => ({
   },
 
   async create(ctx) {
-    const { slug, name } = ctx.request.body;
+    const { slug, name, schema } = ctx.request.body;
 
-    if (!slug || !name) {
-      return ctx.badRequest('Fields "slug" and "name" are required.');
+    if (!slug || !name || !schema) {
+      return ctx.badRequest('Fields "slug", "name", and "schema" are required.');
     }
 
     if (!/^[a-z0-9-]+$/.test(slug)) {
@@ -37,11 +37,17 @@ module.exports = ({ strapi }) => ({
       );
     }
 
+    if (!/^[a-z0-9_-]+$/.test(schema)) {
+      return ctx.badRequest(
+        'Schema name must contain only lowercase letters, numbers, underscores, and hyphens.'
+      );
+    }
+
     try {
       const tenant = await strapi
         .plugin('multitenancy')
         .service('tenantManager')
-        .createTenant({ slug, name });
+        .createTenant({ slug, name, schema });
 
       ctx.created({ data: tenant });
     } catch (err) {
@@ -52,13 +58,23 @@ module.exports = ({ strapi }) => ({
 
   async update(ctx) {
     const { slug } = ctx.params;
-    const { name } = ctx.request.body;
+    const { name, slug: newSlug } = ctx.request.body;
+
+    if (!name || !newSlug) {
+      return ctx.badRequest('Fields "name" and "slug" are required.');
+    }
+
+    if (!/^[a-z0-9-]+$/.test(newSlug)) {
+      return ctx.badRequest(
+        'Slug must contain only lowercase letters, numbers, and hyphens.'
+      );
+    }
 
     try {
       const tenant = await strapi
         .plugin('multitenancy')
         .service('tenantManager')
-        .updateTenant(slug, { name });
+        .updateTenant(slug, { name, slug: newSlug });
 
       ctx.body = { data: tenant };
     } catch (err) {

@@ -24,6 +24,10 @@ import { getTenantUrl } from '../../utils/api';
 const validate = (values) => {
   const errors = {};
   if (!values.name) errors.name = 'Required';
+  if (!values.slug) errors.slug = 'Required';
+  else if (!/^[a-z0-9-]+$/.test(values.slug)) {
+    errors.slug = 'Only lowercase letters, numbers, and hyphens';
+  }
   return errors;
 };
 
@@ -80,12 +84,12 @@ const TenantEditPage = () => {
         )}
       </Page.Title>
       <Formik
-        initialValues={{ name: tenant.name }}
+        initialValues={{ slug: tenant.slug, name: tenant.name }}
         validate={validate}
         onSubmit={(values) => mutation.mutate(values)}
         enableReinitialize
       >
-        {({ handleSubmit, values, handleChange, errors }) => (
+        {({ handleSubmit, values, handleChange, setFieldValue, errors }) => (
           <Form noValidate onSubmit={handleSubmit}>
             <Layouts.Header
               primaryAction={
@@ -102,8 +106,8 @@ const TenantEditPage = () => {
                 defaultMessage: 'Edit tenant',
               })}
               subtitle={formatMessage(
-                { id: `${pluginId}.edit.subtitle`, defaultMessage: 'Slug: {slug}' },
-                { slug: tenant.slug }
+                { id: `${pluginId}.edit.subtitle`, defaultMessage: 'Schema: {schema}' },
+                { schema: tenant.schema }
               )}
               navigationAction={
                 <Button variant="tertiary" onClick={() => navigate('..')} startIcon={<ArrowLeft />} size="S">
@@ -126,21 +130,26 @@ const TenantEditPage = () => {
               >
                 <Grid.Root gap={4}>
                   <Grid.Item col={6} xs={12}>
-                    <Field.Root name="slug">
+                    <Field.Root
+                      name="slug"
+                      error={errors.slug}
+                      required
+                    >
                       <Field.Label>
                         {formatMessage({ id: 'global.slug', defaultMessage: 'Slug' })}
                       </Field.Label>
                       <TextInput
                         name="slug"
-                        value={tenant.slug}
-                        disabled
+                        value={values.slug || ''}
+                        onChange={(e) => setFieldValue('slug', e.target.value)}
                       />
                       <Field.Hint>
                         {formatMessage({
-                          id: `${pluginId}.slug.readonly`,
-                          defaultMessage: 'Slug cannot be changed after creation',
+                          id: `${pluginId}.slug.hint.edit`,
+                          defaultMessage: 'Subdomain identifier — changing this affects all tenant URLs',
                         })}
                       </Field.Hint>
+                      <Field.Error />
                     </Field.Root>
                   </Grid.Item>
                   <Grid.Item col={6} xs={12}>
@@ -158,6 +167,24 @@ const TenantEditPage = () => {
                         onChange={handleChange}
                       />
                       <Field.Error />
+                    </Field.Root>
+                  </Grid.Item>
+                  <Grid.Item col={6} xs={12}>
+                    <Field.Root name="schema">
+                      <Field.Label>
+                        {formatMessage({ id: `${pluginId}.schema`, defaultMessage: 'Schema Name' })}
+                      </Field.Label>
+                      <TextInput
+                        name="schema"
+                        value={tenant.schema}
+                        disabled
+                      />
+                      <Field.Hint>
+                        {formatMessage({
+                          id: `${pluginId}.schema.readonly`,
+                          defaultMessage: 'Schema name cannot be changed after creation',
+                        })}
+                      </Field.Hint>
                     </Field.Root>
                   </Grid.Item>
                 </Grid.Root>

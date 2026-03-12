@@ -61,13 +61,23 @@ module.exports = ({ strapi }) => {
   /**
    * Creates a new tenant: initializes the PostgreSQL schema and persists the record.
    *
-   * @param {{ slug: string, name: string }} param0
+   * @param {{ slug: string, name: string, schema: string }} param0
    * @returns {Promise<object>}
    */
-  async createTenant({ slug, name }) {
+  async createTenant({ slug, name, schema }) {
     const existing = await this.getTenant(slug);
     if (existing) {
-      throw new Error(`Tenant "${slug}" already exists.`);
+      throw new Error(`Tenant with slug "${slug}" already exists.`);
+    }
+
+    // Check schema uniqueness directly (schema is not the lookup key)
+    const schemaConflict = await strapi.db.connection
+      .withSchema('public')
+      .from(TENANTS_TABLE)
+      .where({ schema, active: true })
+      .first();
+    if (schemaConflict) {
+      throw new Error(`Schema "${schema}" is already in use by another tenant.`);
     }
 
     const schemaManager = strapi
@@ -75,7 +85,7 @@ module.exports = ({ strapi }) => {
       .service('schemaManager');
 
     // 1. Create and initialize the PostgreSQL schema
-    await schemaManager.createSchema(slug);
+    await schemaManager.createSchema(schema);
 
     // 2. Persist the tenant record in the public schema
     await strapi.db.connection
@@ -84,7 +94,7 @@ module.exports = ({ strapi }) => {
       .insert({
         slug,
         name,
-        schema: slug,
+        schema,
         active: true,
         created_at: new Date(),
         updated_at: new Date(),
@@ -95,24 +105,39 @@ module.exports = ({ strapi }) => {
   },
 
   /**
-   * Updates the display name of an existing tenant.
+   * Updates a tenant's name and/or slug. The schema name is immutable.
    *
-   * @param {string} slug
-   * @param {{ name: string }} param1
+   * @param {string} slug - Current slug used to identify the tenant
+   * @param {{ name?: string, slug?: string }} param1
    * @returns {Promise<object>}
    */
-  async updateTenant(slug, { name }) {
+  async updateTenant(slug, { name, slug: newSlug }) {
     const tenant = await this.getTenant(slug);
     if (!tenant) throw new Error(`Tenant "${slug}" not found.`);
+
+    const updates = { updated_at: new Date() };
+
+    if (name !== undefined) updates.name = name;
+
+    if (newSlug && newSlug !== slug) {
+      if (!/^[a-z0-9-]+$/.test(newSlug)) {
+        throw new Error('Slug must contain only lowercase letters, numbers, and hyphens.');
+      }
+      const conflict = await this.getTenant(newSlug);
+      if (conflict) throw new Error(`Tenant with slug "${newSlug}" already exists.`);
+      updates.slug = newSlug;
+    }
 
     await strapi.db.connection
       .withSchema('public')
       .table(TENANTS_TABLE)
       .where({ slug })
-      .update({ name, updated_at: new Date() });
+      .update(updates);
 
     this.invalidateCache(slug);
-    return this.getTenant(slug);
+    if (updates.slug) this.invalidateCache(updates.slug);
+
+    return this.getTenant(updates.slug ?? slug);
   },
 
   /**
