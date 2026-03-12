@@ -1,9 +1,9 @@
-# strapi-plugin-multitenant
+# strapi-plugin-multitenancy
 
 > **PostgreSQL schema-per-tenant isolation for Strapi 5.**
 > Identifies tenants via subdomain, propagates context through `AsyncLocalStorage`, and proxies Strapi's DB layer to route all ORM queries to the correct PostgreSQL schema — with zero changes to your content types or API.
 
-[![npm version](https://img.shields.io/npm/v/strapi-plugin-multitenant.svg)](https://www.npmjs.com/package/strapi-plugin-multitenant)
+[![npm version](https://img.shields.io/npm/v/strapi-plugin-multitenancy.svg)](https://www.npmjs.com/package/strapi-plugin-multitenancy)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Strapi v5](https://img.shields.io/badge/Strapi-v5-blue)](https://strapi.io)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-required-blue)](https://www.postgresql.org/)
@@ -12,7 +12,7 @@
 
 ## Overview
 
-`strapi-plugin-multitenant` provides **physical data isolation** between tenants using PostgreSQL schemas. Each tenant gets its own schema (e.g., `acme`, `globex`) containing isolated copies of all content tables. System tables (`admin_*`, `strapi_*`, auth roles/permissions, and i18n locales) are automatically mapped as views pointing to the `public` schema, keeping administration centralized.
+`strapi-plugin-multitenancy` provides **physical data isolation** between tenants using PostgreSQL schemas. Each tenant gets its own schema (e.g., `acme`, `globex`) containing isolated copies of all content tables. System tables (`admin_*`, `strapi_*`, auth roles/permissions, and i18n locales) are automatically mapped as views pointing to the `public` schema, keeping administration centralized.
 
 **Key characteristics:**
 
@@ -99,10 +99,10 @@ Request: acme.myapp.com → POST /api/articles
 
 ```bash
 # npm
-npm install strapi-plugin-multitenant
+npm install strapi-plugin-multitenancy
 
 # yarn
-yarn add strapi-plugin-multitenant
+yarn add strapi-plugin-multitenancy
 ```
 
 ### 1. Register the plugin
@@ -281,7 +281,7 @@ You can access the plugin services from your own code:
 
 ```js
 // Get the active tenant from within a request context
-const tenantContext = require('strapi-plugin-multitenant/server/context/tenant-context');
+const tenantContext = require('strapi-plugin-multitenancy/server/context/tenant-context');
 const tenant = tenantContext.getTenant(); // { slug, name, schema, ... } | null
 
 // Tenant management
@@ -348,8 +348,8 @@ The sync operation is idempotent — it only adds missing tables and columns; it
 Contributions are welcome. Please open an issue to discuss your proposal before submitting a pull request.
 
 ```bash
-git clone https://github.com/veloso/strapi-plugin-multitenant.git
-cd strapi-plugin-multitenant
+git clone https://github.com/veloso/strapi-plugin-multitenancy.git
+cd strapi-plugin-multitenancy
 ```
 
 ---
