@@ -1,6 +1,6 @@
 {
   "name": "strapi-plugin-multitenancy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "PostgreSQL schema-per-tenant isolation for Strapi 5. Identifies tenants via subdomain, propagates context through AsyncLocalStorage, and proxies Strapi's DB layer to route queries to the correct schema.",
   "main": "strapi-server.js",
   "license": "MIT",
@@ -44,8 +44,10 @@
     "required": false
   },
   "exports": {
+    ".": "./strapi-server.js",
     "./strapi-admin": "./admin/src/index.js",
-    "./strapi-server": "./strapi-server.js"
+    "./strapi-server": "./strapi-server.js",
+    "./package.json": "./package.json"
   },
   "files": [
     "admin",
